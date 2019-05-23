@@ -19,6 +19,8 @@ var PLAID_ENV = process.env.PLAID_ENV || 'sandbox';
 var NUMBER_OF_DAYS = process.env.NUMBER_OF_DAYS ? parseInt(process.env.NUMBER_OF_DAYS) : 7;
 var DEFAULT_ACCOUNT = process.env.DEFAULT_ACCOUNT;
 var DAYS_TO_CACHE_ACCESS_TOKEN = process.env.DAYS_TO_CACHE_ACCESS_TOKEN ? parseInt(process.env.DAYS_TO_CACHE_ACCESS_TOKEN) : 7;
+var OUTPUT_PATH = process.env.OUTPUT_PATH;
+
 
 // PLAID_PRODUCTS is a comma-separated list of products to use when initializing
 // Link. Note that this list must contain 'assets' in order for the app to be
@@ -129,11 +131,32 @@ app.get('/transactions', function(request, response, next) {
         }
       });
       transactionsResponse.transactions = filteredTransactions;
+      createTransactionCSV(transactionsResponse.transactions);
       prettyPrintResponse(transactionsResponse);
       response.json({error: null, transactions: transactionsResponse});
     }
   });
 });
+
+function createTransactionCSV(transactions) {
+  var contents = '';
+
+  transactions.forEach((txn, idx) => {
+    contents += '\n';
+    contents += '\t' + txn.quarter;
+    contents += '\t' + txn.date;
+    contents += '\t' + txn.name;
+    contents += '\t' + txn.amount;
+  });
+
+  const fs = require('fs');
+  fs.writeFile(OUTPUT_PATH + '/output_'+(new Date()).getTime()+'.csv', contents, function(err) {
+    if(err) { return console.log(err); }
+
+    console.log('The file was saved!');
+  });
+
+}
 
 function getQuarter(month) {
   switch(month) {
@@ -157,6 +180,9 @@ function getQuarter(month) {
 }
 
 var server = app.listen(APP_PORT, function() {
+  if(!OUTPUT_PATH) {
+    console.log('Export will not work, you must set OUTPUT_PATH');
+  }
   console.log('PlaidSheets is running on port ' + APP_PORT);
 });
 
