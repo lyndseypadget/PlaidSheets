@@ -242,12 +242,13 @@
           });
         } else {
           $('#get-transactions-data').slideUp(function() {
-            var html = '<tr><td><strong>Name</strong></td><td><strong>Amount</strong></td><td><strong>Date</strong></td></tr>';
+            var html = '<tr><td><strong>Quarter</strong></td><td><strong>Date</strong></td><td><strong>Description</strong></td><td><strong>Amount</strong></td></tr>';
             data.transactions.transactions.forEach(function(txn, idx) {
               html += '<tr>';
+              html += '<td>' + txn.quarter + '</td>';
+              html += '<td>' + txn.date + '</td>';
               html += '<td>' + txn.name + '</td>';
               html += '<td>$' + txn.amount + '</td>';
-              html += '<td>' + txn.date + '</td>';
               html += '</tr>';
             });
 

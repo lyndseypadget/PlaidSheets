@@ -5,6 +5,8 @@ require('dotenv').config();
 var util = require('util');
 
 var express = require('express');
+var favicon = require('serve-favicon');
+var path = require('path');
 var bodyParser = require('body-parser');
 var moment = require('moment');
 var plaid = require('plaid');
@@ -40,6 +42,7 @@ var client = new plaid.Client(
 );
 
 var app = express();
+app.use(favicon(path.join(__dirname, 'favicon.png')))
 app.use(express.static('public'));
 app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({
@@ -105,7 +108,7 @@ app.get('/transactions', function(request, response, next) {
         if(matchingAcct) {
           account_id = matchingAcct.account_id;
         } else {
-          error = 'No account matching the provided mask.  Ensure you have set the last four digits of the desired account correctly with DEFAULT_ACCOUNT="xxxx"';
+          error = 'No account matches the provided mask.  Ensure you have set the last FOUR digits of the desired account correctly with DEFAULT_ACCOUNT="xxxx"';
           prettyPrintResponse(error);
           return response.json({
             error: error
@@ -115,6 +118,12 @@ app.get('/transactions', function(request, response, next) {
 
       var filteredTransactions = [];
       transactionsResponse.transactions.forEach((txn, idx) => {
+
+        var dateParts = txn.date.split('-');
+        txn.date = dateParts[1] + '/' + dateParts[2] + '/' + dateParts[0];
+
+        txn.quarter = getQuarter(dateParts[1]);
+
         if((account_id && txn.account_id == account_id) || !account_id) {
           filteredTransactions.push(txn);
         }
@@ -125,6 +134,27 @@ app.get('/transactions', function(request, response, next) {
     }
   });
 });
+
+function getQuarter(month) {
+  switch(month) {
+    case '01':
+    case '02':
+    case '03':
+      return '1';
+    case '04':
+    case '05':
+    case '06':
+      return '2';
+    case '07':
+    case '08':
+    case '09':
+      return '3';
+    case '10':
+    case '11':
+    case '12':
+      return '4';
+  }
+}
 
 var server = app.listen(APP_PORT, function() {
   console.log('PlaidSheets is running on port ' + APP_PORT);
