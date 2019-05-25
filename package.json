@@ -4,7 +4,8 @@
   "description": "Get transactions from your bank using Plaid into a spreadsheet",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "updateSheet": "node -e 'require(\"./index.js\").getTransactions()'"
   },
   "author": "lpadget@longplaysoftware.com",
   "repository": "https://github.com/lyndseypadget/plaidsheets",
@@ -14,6 +15,7 @@
     "dotenv": "8.0.0",
     "ejs": "2.5.x",
     "express": "4.16.x",
+    "googleapis": "40.0.0",
     "moment": "2.22.x",
     "plaid": "3.x.x",
     "serve-favicon": "2.5.0"

@@ -2,39 +2,27 @@
 
 require('dotenv').config();
 
-var util = require('util');
+const util = require('util');
+const express = require('express');
+const favicon = require('serve-favicon');
+const path = require('path');
+const bodyParser = require('body-parser');
+const moment = require('moment');
+const plaid = require('plaid');
+const fs = require('fs');
 
-var express = require('express');
-var favicon = require('serve-favicon');
-var path = require('path');
-var bodyParser = require('body-parser');
-var moment = require('moment');
-var plaid = require('plaid');
+const gSheet = require('./gsheet');
 
-var APP_PORT = process.env.APP_PORT || 8000;
-var PLAID_CLIENT_ID = process.env.PLAID_CLIENT_ID;
-var PLAID_SECRET = process.env.PLAID_SECRET;
-var PLAID_PUBLIC_KEY = process.env.PLAID_PUBLIC_KEY;
-var PLAID_ENV = process.env.PLAID_ENV || 'sandbox';
-var NUMBER_OF_DAYS = process.env.NUMBER_OF_DAYS ? parseInt(process.env.NUMBER_OF_DAYS) : 7;
-var DEFAULT_ACCOUNT = process.env.DEFAULT_ACCOUNT;
-var DAYS_TO_CACHE_ACCESS_TOKEN = process.env.DAYS_TO_CACHE_ACCESS_TOKEN ? parseInt(process.env.DAYS_TO_CACHE_ACCESS_TOKEN) : 7;
-var OUTPUT_PATH = process.env.OUTPUT_PATH;
-
-
-// PLAID_PRODUCTS is a comma-separated list of products to use when initializing
-// Link. Note that this list must contain 'assets' in order for the app to be
-// able to create and retrieve asset reports.
+const APP_PORT = process.env.APP_PORT || 8000;
+const PLAID_CLIENT_ID = process.env.PLAID_CLIENT_ID;
+const PLAID_SECRET = process.env.PLAID_SECRET;
+const PLAID_PUBLIC_KEY = process.env.PLAID_PUBLIC_KEY;
+const PLAID_ENV = process.env.PLAID_ENV || 'sandbox';
+const NUMBER_OF_DAYS = process.env.NUMBER_OF_DAYS ? parseInt(process.env.NUMBER_OF_DAYS) : 7;
+const DEFAULT_ACCOUNT = process.env.DEFAULT_ACCOUNT;
+const DAYS_TO_CACHE_ACCESS_TOKEN = process.env.DAYS_TO_CACHE_ACCESS_TOKEN ? parseInt(process.env.DAYS_TO_CACHE_ACCESS_TOKEN) : 7;
 var PLAID_PRODUCTS = process.env.PLAID_PRODUCTS || 'transactions';
 
-// We store the access_token in memory - in production, store it in a secure
-// persistent data store
-var ACCESS_TOKEN = null;
-var PUBLIC_TOKEN = null;
-var ITEM_ID = null;
-
-// Initialize the Plaid client
-// Find your API keys in the Dashboard (https://dashboard.plaid.com/account/keys)
 var client = new plaid.Client(
   PLAID_CLIENT_ID,
   PLAID_SECRET,
@@ -43,7 +31,7 @@ var client = new plaid.Client(
   {version: '2018-05-22'}
 );
 
-var app = express();
+const app = express();
 app.use(favicon(path.join(__dirname, 'favicon.png')))
 app.use(express.static('public'));
 app.set('view engine', 'ejs');
@@ -61,102 +49,107 @@ app.get('/', function(request, response, next) {
   });
 });
 
-// Exchange token flow - exchange a Link public_token for
-// an API access_token
-// https://plaid.com/docs/#exchange-token-flow
 app.post('/get_access_token', function(request, response, next) {
-  PUBLIC_TOKEN = request.body.public_token;
-  client.exchangePublicToken(PUBLIC_TOKEN, function(error, tokenResponse) {
+  let publicToken = request.body.public_token;
+  client.exchangePublicToken(publicToken, function(error, tokenResponse) {
     if (error != null) {
       prettyPrintResponse(error);
       return response.json({
         error: error,
       });
     }
-    ACCESS_TOKEN = tokenResponse.access_token;
-    ITEM_ID = tokenResponse.item_id;
+
+    var contents = {
+      access_token: tokenResponse.access_token,
+      item_id: tokenResponse.item_id
+    };
+
+    fs.writeFile('./plaid_token.json', JSON.stringify(contents), function(err) {
+      if(err) { return console.log(err); }
+      console.log('plaid_token.json was created');
+    });
+
     prettyPrintResponse(tokenResponse);
     response.json({
-      access_token: ACCESS_TOKEN,
-      item_id: ITEM_ID,
+      access_token: tokenResponse.access_token,
+      item_id: tokenResponse.item_id,
       error: null,
     });
   });
 });
 
-
-// Retrieve Transactions for an Item
-// https://plaid.com/docs/#transactions
-app.get('/transactions', function(request, response, next) {
-  var startDate = moment().subtract(NUMBER_OF_DAYS, 'days').format('YYYY-MM-DD');
-  var endDate = moment().format('YYYY-MM-DD');
-  client.getTransactions(ACCESS_TOKEN, startDate, endDate, {
-    count: 250,
-    offset: 0,
-  }, function(error, transactionsResponse) {
-    if (error != null) {
-      prettyPrintResponse(error);
-      return response.json({
-        error: error
-      });
-    } else {
-      //Success
-      var account_id;
-      if(DEFAULT_ACCOUNT) {
-        var matchingAcct = transactionsResponse.accounts.find((e) => {
-          return e.mask === DEFAULT_ACCOUNT;
-        });
-
-        if(matchingAcct) {
-          account_id = matchingAcct.account_id;
-        } else {
-          error = 'No account matches the provided mask.  Ensure you have set the last FOUR digits of the desired account correctly with DEFAULT_ACCOUNT="xxxx"';
-          prettyPrintResponse(error);
-          return response.json({
-            error: error
-          });
-        }
-      }
-
-      var filteredTransactions = [];
-      transactionsResponse.transactions.forEach((txn, idx) => {
-
-        var dateParts = txn.date.split('-');
-        txn.date = dateParts[1] + '/' + dateParts[2] + '/' + dateParts[0];
-
-        txn.quarter = getQuarter(dateParts[1]);
-
-        if((account_id && txn.account_id == account_id) || !account_id) {
-          filteredTransactions.push(txn);
-        }
-      });
-      transactionsResponse.transactions = filteredTransactions;
-      createTransactionCSV(transactionsResponse.transactions);
-      prettyPrintResponse(transactionsResponse);
-      response.json({error: null, transactions: transactionsResponse});
-    }
+app.post('/set_access_token', function(request, response, next) {
+  let accessToken = request.body.access_token;
+  client.getItem(accessToken, function(error, itemResponse) {
+    response.json({
+      item_id: itemResponse.item.item_id,
+      error: false,
+    });
   });
 });
 
-function createTransactionCSV(transactions) {
-  var contents = '';
+var server = app.listen(APP_PORT, function() {
+  console.log('PlaidSheets is running on port ' + APP_PORT);
+});
 
-  transactions.forEach((txn, idx) => {
-    contents += '\n';
-    contents += '\t' + txn.quarter;
-    contents += '\t' + txn.date;
-    contents += '\t' + txn.name;
-    contents += '\t' + txn.amount;
+var prettyPrintResponse = response => {
+  // console.log(util.inspect(response, {colors: true, depth: 4}));
+};
+
+function getTransactions() {
+  fs.readFile('plaid_token.json', (err, content) => {
+    if (err) return console.log('Error loading client secret file:', err);
+    let accessTokenObj = JSON.parse(content);
+
+    var startDate = moment().subtract(NUMBER_OF_DAYS, 'days').format('YYYY-MM-DD');
+    var endDate = moment().format('YYYY-MM-DD');
+    client.getTransactions(accessTokenObj.access_token, startDate, endDate, {
+      count: 250,
+      offset: 0,
+    }, function(error, transactionsResponse) {
+      if (error != null) {
+        prettyPrintResponse(error);
+        process.exit(1);
+      } else {
+        //Success
+        console.log('Successfully received transactions from Plaid');
+        var account_id;
+        if(DEFAULT_ACCOUNT) {
+          var matchingAcct = transactionsResponse.accounts.find((e) => {
+            return e.mask === DEFAULT_ACCOUNT;
+          });
+
+          if(matchingAcct) {
+            account_id = matchingAcct.account_id;
+          } else {
+            error = 'No account matches the provided mask.  Ensure you have set the last FOUR digits of the desired account correctly with DEFAULT_ACCOUNT="xxxx"';
+            prettyPrintResponse(error);
+            process.exit(1);
+          }
+        }
+
+        var filteredTransactions = [];
+        transactionsResponse.transactions.forEach((txn, idx) => {
+
+          var dateParts = txn.date.split('-');
+          txn.date = dateParts[1] + '/' + dateParts[2] + '/' + dateParts[0];
+
+          txn.quarter = getQuarter(dateParts[1]);
+
+          if((account_id && txn.account_id == account_id) || !account_id) {
+            filteredTransactions.push(txn);
+          }
+        });
+        transactionsResponse.transactions = filteredTransactions;
+        prettyPrintResponse(transactionsResponse);
+
+        console.log('Connecting to Google Sheet...');
+        gSheet.writeToSheet(transactionsResponse.transactions);
+      }
+    });
+
   });
-
-  const fs = require('fs');
-  fs.writeFile(OUTPUT_PATH + '/output_'+(new Date()).getTime()+'.csv', contents, function(err) {
-    if(err) { return console.log(err); }
-
-    console.log('The file was saved!');
-  });
-
-}
+};
 
 function getQuarter(month) {
   switch(month) {
@@ -179,23 +172,4 @@ function getQuarter(month) {
   }
 }
 
-var server = app.listen(APP_PORT, function() {
-  if(!OUTPUT_PATH) {
-    console.log('Export will not work, you must set OUTPUT_PATH');
-  }
-  console.log('PlaidSheets is running on port ' + APP_PORT);
-});
-
-var prettyPrintResponse = response => {
-  // console.log(util.inspect(response, {colors: true, depth: 4}));
-};
-
-app.post('/set_access_token', function(request, response, next) {
-  ACCESS_TOKEN = request.body.access_token;
-  client.getItem(ACCESS_TOKEN, function(error, itemResponse) {
-    response.json({
-      item_id: itemResponse.item.item_id,
-      error: false,
-    });
-  });
-});
+module.exports = { getTransactions };

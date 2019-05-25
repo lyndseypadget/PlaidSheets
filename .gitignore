@@ -36,4 +36,9 @@ jspm_packages
 # Optional REPL history
 .node_repl_history
 
+#######################################
+
 .env
+plaid_token.json
+gsheet_token.json
+gsheet_credentials.json
