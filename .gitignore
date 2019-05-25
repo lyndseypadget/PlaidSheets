@@ -42,3 +42,5 @@ jspm_packages
 plaid_token.json
 gsheet_token.json
 gsheet_credentials.json
+runCron.sh
+debug.*

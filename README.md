@@ -59,3 +59,11 @@ The range indicates the columns that will be appended to.  Whichever row has dat
 
 ## Run the job again and again.  Automate!
 Now you have everything you need to run the job on a regular schedule.  It's recommended that you run it every x days, where x = NUMBER_OF_DAYS in the .env file.  Otherwise you may end up with duplicate transactions.
+
+Personally, I have a really simply shell script, like this:
+```
+#!/bin/sh
+
+cd /pathToMyStuff/PlaidSheets
+npm run updateSheet
+```
