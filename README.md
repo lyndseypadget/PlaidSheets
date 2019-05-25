@@ -1,6 +1,6 @@
 # PlaidSheets
 
-![PlaidSheets](img/plaidsheets.png)
+![PlaidSheets](public/plaidsheets.png)
 ### A node app using Plaid APIs to get bank transactions into a Google Sheet
 
 Based on [Plaid Quickstart](https://plaid.com/docs/quickstart) and adapted for my needs.
@@ -56,13 +56,13 @@ The new row(s) provided will be written (appended) to the spreadsheet, right aft
 1. Paste the code you get at that URL into the command-line.  This will create a file called `gsheet_token.json`.
 1. The script will attempt to proceed.  If everything works, you'll get "Success!" in the console and an exit code of 0.
 
-## Run the job again and again.  Automate!
+## Run the job again and again.  Automate all the things!
 Now you have everything you need to run the job on a regular schedule.  It's recommended that you run it every x days, where x = NUMBER_OF_DAYS in the .env file.  Otherwise you may end up with duplicate transactions.
 
-Personally, I have a really simply shell script, like this:
-```
-#!/bin/sh
+Personally, I run the included cronJob.sh every morning.  I'm on a Mac, so I'm using crontab:
 
-cd /pathToMyStuff/PlaidSheets
-npm run updateSheet
+1. In the console, type `crontab -e`.  Now you're in vim, and you can type something like this.  You can read more about the cron format [here](http://www.nncron.ru/help/EN/working/cron-format.htm).
 ```
+* 7 * * * /FULL_PATH_TO_THIS_REPO/cronjob.sh /FULL_PATH_TO_THIS_REPO >> /FULL_PATH_TO_THIS_REPO/debug.log 2>&1
+```
+1. Observe the debug.log file to ensure everything works as planned.  Feel free to disable console logging (either in the code or in the cron job instructions) if desired.
