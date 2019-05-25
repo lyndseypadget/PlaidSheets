@@ -20,8 +20,6 @@ const PLAID_PUBLIC_KEY = process.env.PLAID_PUBLIC_KEY;
 const PLAID_ENV = process.env.PLAID_ENV || 'sandbox';
 const NUMBER_OF_DAYS = process.env.NUMBER_OF_DAYS ? parseInt(process.env.NUMBER_OF_DAYS) : 7;
 const DEFAULT_ACCOUNT = process.env.DEFAULT_ACCOUNT;
-const DAYS_TO_CACHE_ACCESS_TOKEN = process.env.DAYS_TO_CACHE_ACCESS_TOKEN ? parseInt(process.env.DAYS_TO_CACHE_ACCESS_TOKEN) : 7;
-var PLAID_PRODUCTS = process.env.PLAID_PRODUCTS || 'transactions';
 
 var client = new plaid.Client(
   PLAID_CLIENT_ID,
@@ -44,8 +42,7 @@ app.get('/', function(request, response, next) {
   response.render('index.ejs', {
     PLAID_PUBLIC_KEY: PLAID_PUBLIC_KEY,
     PLAID_ENV: PLAID_ENV,
-    PLAID_PRODUCTS: PLAID_PRODUCTS,
-    DAYS_TO_CACHE_ACCESS_TOKEN: DAYS_TO_CACHE_ACCESS_TOKEN
+    PLAID_PRODUCTS: 'transactions'
   });
 });
 

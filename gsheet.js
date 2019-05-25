@@ -19,13 +19,45 @@ function writeToSheet(transactions) {
 
       let values = [];
 
+      transactions.reverse(); //txns are ordered newest to oldest, but with append we want newest at bottom
+
+      // ------------------------------------------------
+      // Customize your transaction spreadsheet data here
+      // ------------------------------------------------
       transactions.forEach((txn, idx) => {
         let row = [];
+        let amount = 0 - parseFloat(txn.amount);  //debits should be negative and credits positive
+
         row.push(txn.quarter);
         row.push(txn.date);
         row.push(txn.name);
-        row.push(0 - parseFloat(txn.amount));  //debits are positive and credits are negative... negate them here
-        values.push(row);
+        if(amount > 0) {
+          //INCOME
+          row.push(amount);  //amount goes in column D
+          row.push(0);
+          row.push(parseFloat(amount*0.65).toFixed(2));
+          row.push(parseFloat(amount*0.15).toFixed(2));
+          row.push(parseFloat(amount*0.20).toFixed(2));
+          values.push(row);
+        } else if (amount < 0) {
+          //EXPENSE
+          if(txn.name.startsWith('Online scheduled transfer to CHK ')) {
+            row.push('');
+            row.push('');
+            row.push(amount); //amount goes in column F
+            row.push('');
+            row.push('');
+          } else {
+            row.push('');
+            row.push('');
+            row.push('');
+            row.push('');
+            row.push(amount); //amount goes in column H
+          }
+          values.push(row);
+        } else {
+          // 0 amounts do not get written to the sheet at all
+        }
       });
 
       const resource = {
@@ -54,16 +86,15 @@ function writeToSheet(transactions) {
 
 function authorize(credentials, callback) {
   const {client_secret, client_id, redirect_uris} = credentials.installed;
-  const oAuth2Client = new google.auth.OAuth2(
-      client_id, client_secret, redirect_uris[0]);
+  const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
 
   fs.readFile(TOKEN_PATH, (err, token) => {
     if (err) {
       getNewToken(oAuth2Client, callback);
-      process.exit(1);
+    } else {
+      oAuth2Client.setCredentials(JSON.parse(token));
+      callback(oAuth2Client);
     }
-    oAuth2Client.setCredentials(JSON.parse(token));
-    callback(oAuth2Client);
   });
 }
 
