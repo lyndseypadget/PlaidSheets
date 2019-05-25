@@ -17,7 +17,6 @@ PLAID_ENV="development"
 
 GSHEET_ID="xxxx_yyyyyyyy_zzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"
 GSHEET_TAB_NAME="2019 Taxes"
-GSHEET_RANGE="D1:H1" #the columns matter, not the row
 
 DEFAULT_ACCOUNT="1234"
 NUMBER_OF_DAYS="10"
@@ -31,7 +30,7 @@ The GSHEET items refer to the spreadsheet you want to write to.  The ID can be f
 
 Of course, it must be a Google Sheet that you have access to.  If you have several Google accounts, ensure you use the same account consistently throughout this process.
 
-The range indicates the columns that will be appended to.  Whichever row has data, this new data will be written right after that.
+The new row(s) provided will be written (appended) to the spreadsheet, right after the last row of data.
 
 
 #### Other values

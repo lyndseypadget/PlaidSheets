@@ -7,7 +7,6 @@ const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
 const TOKEN_PATH = 'gsheet_token.json';
 const GSHEET_ID = process.env.GSHEET_ID;
 const GSHEET_TAB_NAME = process.env.GSHEET_TAB_NAME;
-const GSHEET_RANGE = process.env.GSHEET_RANGE;
 
 function writeToSheet(transactions) {
   fs.readFile('gsheet_credentials.json', (err, content) => {
@@ -64,11 +63,10 @@ function writeToSheet(transactions) {
         values,
       };
 
-      let tabAndRange = GSHEET_TAB_NAME + '!' + GSHEET_RANGE;
       const sheets = google.sheets({version: 'v4', auth});
       sheets.spreadsheets.values.append({
         spreadsheetId: GSHEET_ID,
-        range: tabAndRange,
+        range: GSHEET_TAB_NAME,
         valueInputOption: 'USER_ENTERED',
         resource: resource
       }, (err, res) => {
