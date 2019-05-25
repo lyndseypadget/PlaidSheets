@@ -74,7 +74,7 @@ function writeToSheet(transactions) {
           console.log('The API returned an error: ' + err);
           process.exit(1);
         } else {
-          console.log('Success!');
+          console.log('Success: Your transactions are now in the Google Sheet');
           process.exit(0);
         }
       });

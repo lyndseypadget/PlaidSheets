@@ -109,7 +109,6 @@ function getTransactions() {
         process.exit(1);
       } else {
         //Success
-        console.log('Successfully received transactions from Plaid');
         var account_id;
         if(DEFAULT_ACCOUNT) {
           var matchingAcct = transactionsResponse.accounts.find((e) => {
@@ -140,7 +139,6 @@ function getTransactions() {
         transactionsResponse.transactions = filteredTransactions;
         prettyPrintResponse(transactionsResponse);
 
-        console.log('Connecting to Google Sheet...');
         gSheet.writeToSheet(transactionsResponse.transactions);
       }
     });
