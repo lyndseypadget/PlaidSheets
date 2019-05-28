@@ -62,7 +62,7 @@ Now you have everything you need to run the job on a regular schedule.  It's rec
 Personally, I run the included cronJob.sh every morning.  I'm on a Mac, so I'm using crontab:
 
 1. In the console, type `crontab -e`.  Now you're in vim, and you can type something like this:
-```0 0 7 * * ? /FULL_PATH_TO_THIS_REPO/cronjob.sh /FULL_PATH_TO_THIS_REPO >> /FULL_PATH_TO_THIS_REPO/debug.log 2>&1``` You can read more about the cron format [here](http://www.nncron.ru/help/EN/working/cron-format.htm).
+```0 7 * * * /FULL_PATH_TO_THIS_REPO/cronjob.sh /FULL_PATH_TO_THIS_REPO >> /FULL_PATH_TO_THIS_REPO/debug.log 2>&1``` You can read more about the cron format [here](http://www.nncron.ru/help/EN/working/cron-format.htm).
 1. Save and exit with `:wq`.
 1. Observe the debug.log file in this directory to ensure everything works as planned.  Feel free to disable console logging (either in the code or in the cron job instructions) if desired.
 
