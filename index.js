@@ -95,6 +95,7 @@ var prettyPrintResponse = response => {
 
 function getTransactions() {
   console.log('Getting transactions on ' + moment().format('MMMM Do YYYY, h:mm:ss a'));
+  console.log('For the last '+NUMBER_OF_DAYS+' days');
   fs.readFile('plaid_token.json', (err, content) => {
     if (err) return console.log('Error loading client secret file:', err);
     let accessTokenObj = JSON.parse(content);
